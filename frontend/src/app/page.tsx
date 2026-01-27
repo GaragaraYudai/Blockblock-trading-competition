@@ -35,7 +35,10 @@ export default function Home() {
   const fetchData = async () => {
     try {
       const apiUrl = "https://blockblock-trading-competition-production-f6b5.up.railway.app";
-      const res = await fetch(`${apiUrl}/leaderboard`);
+      const res = await fetch(`${apiUrl}/leaderboard`, {
+        mode: 'cors',
+        credentials: 'include'
+      });
       if (!res.ok) {
         throw new Error("Failed to fetch data");
       }
