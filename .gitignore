@@ -1,0 +1,18 @@
+# System
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Backend (Python)
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+
+# Frontend (Node/Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/.env*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
