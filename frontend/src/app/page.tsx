@@ -34,7 +34,7 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = "https://blockblock-trading-competition-production-f6b5.up.railway.app";
       const res = await fetch(`${apiUrl}/leaderboard`);
       if (!res.ok) {
         throw new Error("Failed to fetch data");
