@@ -89,7 +89,7 @@ const AdvancedChart = () => {
                         interval={interval as any}
                         timezone="Etc/UTC"
                         style="1"
-                        locale="ko"
+                        locale="en"
                         toolbar_bg="#0f1115"
                         enable_publishing={false}
                         hide_top_toolbar={true}
@@ -105,7 +105,7 @@ const AdvancedChart = () => {
                             interval={interval as any}
                             timezone="Etc/UTC"
                             style="1"
-                            locale="ko"
+                            locale="en"
                             toolbar_bg="#0f1115"
                             enable_publishing={false}
                             hide_top_toolbar={true}

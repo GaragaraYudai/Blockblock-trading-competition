@@ -6,15 +6,7 @@ import AdvancedChart from "@/components/AdvancedChart";
 import { RefreshCw } from "lucide-react";
 import Image from "next/image";
 
-interface LeaderboardItem {
-  rank: number;
-  address: string;
-  accountValue: number;
-  equity: number;
-  roi24h?: number;
-  name?: string;
-  avatar?: string;
-}
+import { LeaderboardItem } from "@/types";
 
 // Strict Mapping: Address -> Name & Avatar
 const USER_MAPPING: Record<string, { name: string; avatar: string }> = {

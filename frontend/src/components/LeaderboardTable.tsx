@@ -3,14 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, TrendingUp, TrendingDown } from 'lucide-react';
 import Image from 'next/image';
 
-interface LeaderboardItem {
-    rank: number;
-    address: string;
-    name?: string; // Mapped Name
-    avatar?: string; // Mapped Avatar Path
-    accountValue: number;
-    roi24h?: number;
-}
+import { LeaderboardItem } from '../types';
 
 interface Props {
     data: LeaderboardItem[];
