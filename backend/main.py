@@ -259,10 +259,6 @@ async def register(
     }
 
 
-@app.options("/api/auth/login")
-async def login_options():
-    """Handle CORS preflight for login"""
-    return {"message": "OK"}
 
 
 @app.post("/api/auth/login", response_model=TokenResponse)
