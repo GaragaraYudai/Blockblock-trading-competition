@@ -54,8 +54,11 @@ def decode_access_token(token: str) -> dict:
     """Decode and validate a JWT token"""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"✅ JWT decoded successfully: user_id={payload.get('sub')}")
         return payload
-    except JWTError:
+    except JWTError as e:
+        print(f"❌ JWT decode error: {str(e)}")
+        print(f"   SECRET_KEY starts with: {SECRET_KEY[:10]}...")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
