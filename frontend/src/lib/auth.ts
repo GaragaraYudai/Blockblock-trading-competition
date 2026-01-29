@@ -1,6 +1,6 @@
 // Authentication utility functions for frontend
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://blockblock-trading-competition-production.up.railway.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://blockblock-trading-competition-production-f6b5.up.railway.app";
 
 export interface User {
     id: number;

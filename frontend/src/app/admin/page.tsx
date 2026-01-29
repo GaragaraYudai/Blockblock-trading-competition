@@ -7,7 +7,7 @@ import { User } from "@/lib/auth";
 import { Check, X, Edit, Loader2, ArrowLeft, LogOut } from "lucide-react";
 import Image from "next/image";
 
-const API_URL = "https://blockblock-trading-competition-production.up.railway.app";
+const API_URL = "https://blockblock-trading-competition-production-f6b5.up.railway.app";
 
 export default function AdminPage() {
     const router = useRouter();
@@ -144,8 +144,8 @@ export default function AdminPage() {
                     <button
                         onClick={() => setFilter("all")}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === "all"
-                                ? "bg-purple-600 text-white"
-                                : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                            ? "bg-purple-600 text-white"
+                            : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
                             }`}
                     >
                         전체
@@ -153,8 +153,8 @@ export default function AdminPage() {
                     <button
                         onClick={() => setFilter("pending")}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === "pending"
-                                ? "bg-yellow-600 text-white"
-                                : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                            ? "bg-yellow-600 text-white"
+                            : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
                             }`}
                     >
                         승인 대기
@@ -162,8 +162,8 @@ export default function AdminPage() {
                     <button
                         onClick={() => setFilter("approved")}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${filter === "approved"
-                                ? "bg-green-600 text-white"
-                                : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                            ? "bg-green-600 text-white"
+                            : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
                             }`}
                     >
                         승인됨

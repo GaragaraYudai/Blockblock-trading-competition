@@ -14,7 +14,7 @@ const DEFAULT_AVATARS = [
   "wonyoung1.jpg", "wonyoung2.jpg", "wonyoung3.jpg", "wonyoung4.jpg", "wonyoung5.jpg"
 ];
 
-const API_URL = "https://blockblock-trading-competition-production.up.railway.app";
+const API_URL = "https://blockblock-trading-competition-production-f6b5.up.railway.app";
 
 export default function Dashboard() {
   const router = useRouter();
