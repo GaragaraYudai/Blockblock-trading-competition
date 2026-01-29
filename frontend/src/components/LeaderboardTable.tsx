@@ -10,14 +10,18 @@ interface Props {
 }
 
 const LeaderboardTable: React.FC<Props> = ({ data }) => {
-    // Sort data: $0 accounts go to the bottom
+    // Sort data: Liquidated accounts ($0 or near-zero) go to the bottom
     const sortedData = [...data].sort((a, b) => {
-        const aValue = a.accountValue ?? 0;
-        const bValue = b.accountValue ?? 0;
+        const aValue = Number(a.accountValue) || 0;
+        const bValue = Number(b.accountValue) || 0;
 
-        // If one is 0 and other is not, 0 goes to bottom
-        if (aValue === 0 && bValue !== 0) return 1;
-        if (aValue !== 0 && bValue === 0) return -1;
+        // Threshold for "liquidated" - accounts with less than $1
+        const isALiquidated = aValue < 1;
+        const isBLiquidated = bValue < 1;
+
+        // If one is liquidated and other is not, liquidated goes to bottom
+        if (isALiquidated && !isBLiquidated) return 1;
+        if (!isALiquidated && isBLiquidated) return -1;
 
         // Otherwise keep original rank order
         return (a.rank ?? 0) - (b.rank ?? 0);
