@@ -55,7 +55,8 @@ cloudinary.config(
 app = FastAPI(
     title="Blockblock Trading Competition API",
     description="Hyperliquid 트레이딩 대회 API with Authentication",
-    version="3.0.0"
+    version="3.0.0",
+    redirect_slashes=False  # Prevent 405 errors from trailing slashes
 )
 
 # CORS 설정 (프론트엔드 연동)
@@ -256,6 +257,12 @@ async def register(
         "message": f"{new_user.username}님, 가입 신청이 완료되었습니다! 관리자 승인을 기다려주세요.",
         "user_id": new_user.id
     }
+
+
+@app.options("/api/auth/login")
+async def login_options():
+    """Handle CORS preflight for login"""
+    return {"message": "OK"}
 
 
 @app.post("/api/auth/login", response_model=TokenResponse)
