@@ -10,6 +10,18 @@ interface Props {
 }
 
 const LeaderboardTable: React.FC<Props> = ({ data }) => {
+    // Sort data: $0 accounts go to the bottom
+    const sortedData = [...data].sort((a, b) => {
+        const aValue = a.accountValue ?? 0;
+        const bValue = b.accountValue ?? 0;
+
+        // If one is 0 and other is not, 0 goes to bottom
+        if (aValue === 0 && bValue !== 0) return 1;
+        if (aValue !== 0 && bValue === 0) return -1;
+
+        // Otherwise keep original rank order
+        return (a.rank ?? 0) - (b.rank ?? 0);
+    });
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -39,7 +51,7 @@ const LeaderboardTable: React.FC<Props> = ({ data }) => {
 
             <div className="space-y-3 relative">
                 <AnimatePresence>
-                    {data.map((item, index) => {
+                    {sortedData.map((item, index) => {
                         const roi = item.roi24h ?? 0;
                         const displayName = item.name || item.address;
 
@@ -67,8 +79,8 @@ const LeaderboardTable: React.FC<Props> = ({ data }) => {
                                     </div>
 
                                     <div className="col-span-1 flex justify-center">
-                                        {/* Avatar with Gold Border */}
-                                        <div className="relative w-12 h-12 rounded-full border-2 border-yellow-500 overflow-hidden shadow-lg shadow-yellow-500/20 group-hover:scale-110 transition-transform duration-300">
+                                        {/* Avatar with Gold Border - Larger size for better visibility */}
+                                        <div className="relative w-16 h-16 rounded-full border-2 border-yellow-500 overflow-hidden shadow-lg shadow-yellow-500/20 group-hover:scale-110 transition-transform duration-300">
                                             {item.avatar && (
                                                 <Image
                                                     src={item.avatar}
@@ -109,7 +121,7 @@ const LeaderboardTable: React.FC<Props> = ({ data }) => {
                                                 {item.rank}
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <div className="relative w-10 h-10 rounded-full border-2 border-yellow-500 overflow-hidden">
+                                                <div className="relative w-14 h-14 rounded-full border-2 border-yellow-500 overflow-hidden">
                                                     {item.avatar && (
                                                         <Image
                                                             src={item.avatar}
