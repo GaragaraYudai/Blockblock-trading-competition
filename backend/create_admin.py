@@ -37,10 +37,17 @@ def create_admin():
     
     db = SessionLocal()
     try:
-        # Check if admin already exists
-        existing_admin = db.query(User).filter(User.username == "admin").first()
+        # Delete old admin accounts
+        old_admin = db.query(User).filter(User.username == "admin").first()
+        if old_admin:
+            db.delete(old_admin)
+            db.commit()
+            print("🗑️  Deleted old 'admin' account")
+        
+        # Check if Water admin already exists
+        existing_admin = db.query(User).filter(User.username == "Water").first()
         if existing_admin:
-            print("⚠️  Admin account already exists!")
+            print("⚠️  Admin account 'Water' already exists!")
             print(f"   Username: {existing_admin.username}")
             print(f"   Role: {existing_admin.role}")
             print(f"   Approved: {existing_admin.is_approved}")
@@ -48,8 +55,8 @@ def create_admin():
         
         # Create admin account
         admin_user = User(
-            username="admin",
-            password_hash=hash_password("1234"),
+            username="Water",
+            password_hash=hash_password("8888"),
             wallet_address="0x0000000000000000000000000000000000000000",  # Placeholder
             profile_image_url=None,
             role="admin",
@@ -67,8 +74,8 @@ def create_admin():
         print("\n✅ Admin account created successfully!")
         print("=" * 50)
         print("🔑 Admin Credentials:")
-        print("   Username: admin")
-        print("   Password: 1234")
+        print("   Username: Water")
+        print("   Password: 8888")
         print("=" * 50)
         print("⚠️  IMPORTANT: Change this password after first login!")
         print("\n✨ You can now start the server and login as admin")
