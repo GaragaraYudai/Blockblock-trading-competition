@@ -297,7 +297,7 @@ async def login(
     
     # JWT 토큰 생성
     access_token = create_access_token(
-        data={"sub": user.id, "username": user.username, "role": user.role}
+        data={"sub": str(user.id), "username": user.username, "role": user.role}
     )
     
     return TokenResponse(
