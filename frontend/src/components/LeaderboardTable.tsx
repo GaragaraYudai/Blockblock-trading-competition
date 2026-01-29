@@ -58,6 +58,7 @@ const LeaderboardTable: React.FC<Props> = ({ data }) => {
                     {sortedData.map((item, index) => {
                         const roi = item.roi24h ?? 0;
                         const displayName = item.name || item.address;
+                        const displayRank = index + 1;
 
                         return (
                             <motion.div
@@ -74,11 +75,11 @@ const LeaderboardTable: React.FC<Props> = ({ data }) => {
                                         {/* Rank Badge */}
                                         <div className={`
                       flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm shadow-lg z-10 border border-white/10
-                      ${item.rank === 1 ? 'bg-gradient-to-b from-yellow-300 to-yellow-600 text-white ring-2 ring-yellow-500/30' :
-                                                item.rank === 2 ? 'bg-gradient-to-b from-gray-300 to-gray-500 text-white ring-2 ring-gray-400/30' :
-                                                    item.rank === 3 ? 'bg-gradient-to-b from-orange-300 to-orange-600 text-white ring-2 ring-orange-500/30' : 'bg-gray-800 text-gray-400'}
+                      ${displayRank === 1 ? 'bg-gradient-to-b from-yellow-300 to-yellow-600 text-white ring-2 ring-yellow-500/30' :
+                                                displayRank === 2 ? 'bg-gradient-to-b from-gray-300 to-gray-500 text-white ring-2 ring-gray-400/30' :
+                                                    displayRank === 3 ? 'bg-gradient-to-b from-orange-300 to-orange-600 text-white ring-2 ring-orange-500/30' : 'bg-gray-800 text-gray-400'}
                     `}>
-                                            {item.rank}
+                                            {displayRank}
                                         </div>
                                     </div>
 
@@ -98,7 +99,7 @@ const LeaderboardTable: React.FC<Props> = ({ data }) => {
 
                                     <div className="col-span-4 font-sans text-base text-gray-100 font-bold flex items-center gap-2">
                                         {displayName}
-                                        {item.rank <= 3 && <Trophy size={16} className="text-yellow-500" />}
+                                        {displayRank <= 3 && <Trophy size={16} className="text-yellow-500" />}
                                     </div>
 
                                     <div className={`col-span-3 text-right font-medium flex items-center justify-end gap-1 ${roi >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -118,11 +119,11 @@ const LeaderboardTable: React.FC<Props> = ({ data }) => {
                                             {/* Rank Badge Mobile */}
                                             <div className={`
                       flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs shadow-lg border border-white/10
-                      ${item.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' :
-                                                    item.rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' :
-                                                        item.rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' : 'bg-gray-800 text-gray-400'}
+                      ${displayRank === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' :
+                                                    displayRank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-white' :
+                                                        displayRank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' : 'bg-gray-800 text-gray-400'}
                     `}>
-                                                {item.rank}
+                                                {displayRank}
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="relative w-14 h-14 rounded-full border-2 border-yellow-500 overflow-hidden">
