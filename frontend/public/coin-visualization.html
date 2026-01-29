@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLOCKBLOCK - Hyper-Surreal Trading Competition</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #020205;
+            font-family: 'Inter', sans-serif;
+        }
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Vignette overlay */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 40%, rgba(2,2,5,0.6) 100%);
+            z-index: 1;
+        }
+        /* Glitch overlay */
+        .glitch-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 255, 0.03) 2px,
+                rgba(0, 255, 255, 0.03) 4px
+            );
+            mix-blend-mode: screen;
+        }
+        .glitch-overlay.active {
+            animation: glitchFlash 0.1s ease-out;
+        }
+        @keyframes glitchFlash {
+            0% { opacity: 1; transform: translateX(-2px); }
+            25% { opacity: 0.8; transform: translateX(2px); }
+            50% { opacity: 1; transform: translateX(-1px); }
+            75% { opacity: 0.6; transform: translateX(1px); }
+            100% { opacity: 0; transform: translateX(0); }
+        }
+        /* Loading */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #4466ff;
+            font-size: 14px;
+            letter-spacing: 4px;
+            z-index: 100;
+            text-transform: uppercase;
+        }
+        .loading.hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="vignette"></div>
+    <div class="glitch-overlay" id="glitchOverlay"></div>
+    <div class="loading" id="loading">INITIALIZING...</div>
+
+    <!-- Three.js and dependencies via CDN -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const CONFIG = {
+            coinCount: 7,
+            particleCount: 2000,
+            magneticForce: 0.15,
+            floatSpeed: 0.0003,
+            rotationSpeed: 0.008,
+            trailLength: 50,
+            glitchInterval: 8000,
+            isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        };
+
+        // Reduce for mobile
+        if (CONFIG.isMobile) {
+            CONFIG.coinCount = 4;
+            CONFIG.particleCount = 800;
+            CONFIG.trailLength = 25;
+        }
+
+        // ============================================
+        // CHROMATIC ABERRATION SHADER
+        // ============================================
+        const ChromaticAberrationShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                resolution: { value: new THREE.Vector2() },
+                strength: { value: 0.003 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform vec2 resolution;
+                uniform float strength;
+                varying vec2 vUv;
+                
+                void main() {
+                    vec2 center = vec2(0.5);
+                    vec2 dir = vUv - center;
+                    float dist = length(dir);
+                    float aberration = dist * dist * strength;
+                    
+                    vec4 cr = texture2D(tDiffuse, vUv + dir * aberration);
+                    vec4 cg = texture2D(tDiffuse, vUv);
+                    vec4 cb = texture2D(tDiffuse, vUv - dir * aberration);
+                    
+                    gl_FragColor = vec4(cr.r, cg.g, cb.b, 1.0);
+                }
+            `
+        };
+
+        // ============================================
+        // GLITCH SHADER
+        // ============================================
+        const GlitchShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                time: { value: 0 },
+                glitchIntensity: { value: 0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float time;
+                uniform float glitchIntensity;
+                varying vec2 vUv;
+                
+                float random(vec2 st) {
+                    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+                }
+                
+                void main() {
+                    vec2 uv = vUv;
+                    
+                    if (glitchIntensity > 0.0) {
+                        float noise = random(vec2(time, floor(uv.y * 50.0)));
+                        if (noise > 0.95) {
+                            uv.x += (random(vec2(time)) - 0.5) * 0.1 * glitchIntensity;
+                        }
+                        
+                        if (random(vec2(time * 0.1)) > 0.98) {
+                            float blockY = floor(uv.y * 20.0) / 20.0;
+                            uv.x += sin(blockY * 100.0 + time * 50.0) * 0.02 * glitchIntensity;
+                        }
+                    }
+                    
+                    vec4 color = texture2D(tDiffuse, uv);
+                    
+                    if (glitchIntensity > 0.0) {
+                        color.rgb += vec3(random(uv + time)) * 0.05 * glitchIntensity;
+                    }
+                    
+                    gl_FragColor = color;
+                }
+            `
+        };
+
+        // ============================================
+        // MAIN APPLICATION
+        // ============================================
+        class CoinVisualization {
+            constructor() {
+                this.container = document.getElementById('canvas-container');
+                this.loadingEl = document.getElementById('loading');
+                this.glitchOverlay = document.getElementById('glitchOverlay');
+                
+                this.coins = [];
+                this.particles = null;
+                this.trails = [];
+                this.clock = new THREE.Clock();
+                this.mouse = new THREE.Vector2();
+                this.glitchActive = false;
+                
+                this.init();
+            }
+
+            async init() {
+                this.setupScene();
+                this.setupLighting();
+                await this.loadTextures();
+                this.createCoins();
+                this.createParticles();
+                this.setupPostProcessing();
+                this.setupEventListeners();
+                this.scheduleGlitch();
+                
+                this.loadingEl.classList.add('hidden');
+                this.animate();
+            }
+
+            setupScene() {
+                // Scene
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x020205);
+                this.scene.fog = new THREE.FogExp2(0x020205, 0.015);
+
+                // Camera
+                this.camera = new THREE.PerspectiveCamera(
+                    60,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
+                );
+                this.camera.position.z = 30;
+
+                // Renderer
+                this.renderer = new THREE.WebGLRenderer({
+                    antialias: !CONFIG.isMobile,
+                    alpha: true,
+                    powerPreference: 'high-performance'
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.2;
+                this.container.appendChild(this.renderer.domElement);
+
+                // Environment map for reflections
+                const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+                pmremGenerator.compileEquirectangularShader();
+
+                // Create a simple environment
+                const envScene = new THREE.Scene();
+                envScene.background = new THREE.Color(0x111122);
+                
+                // Add some lights to the env scene for reflection
+                const envLight1 = new THREE.PointLight(0xc9a032, 50, 100);
+                envLight1.position.set(10, 10, 10);
+                envScene.add(envLight1);
+                
+                const envLight2 = new THREE.PointLight(0x3355ff, 50, 100);
+                envLight2.position.set(-10, -10, 10);
+                envScene.add(envLight2);
+
+                this.envMap = pmremGenerator.fromScene(envScene, 0.04).texture;
+                pmremGenerator.dispose();
+            }
+
+            setupLighting() {
+                // Ambient
+                const ambient = new THREE.AmbientLight(0x111122, 0.5);
+                this.scene.add(ambient);
+
+                // Key Light (Main) - Warm champagne gold
+                const keyLight = new THREE.DirectionalLight(0xfff0d0, 2);
+                keyLight.position.set(15, 15, 20);
+                this.scene.add(keyLight);
+
+                // Fill Light - Cool blue
+                const fillLight = new THREE.DirectionalLight(0x3355ff, 0.8);
+                fillLight.position.set(-15, 5, 10);
+                this.scene.add(fillLight);
+
+                // Rim Light (Back Light) - Strong edge lighting
+                const rimLight = new THREE.DirectionalLight(0x66ccff, 3);
+                rimLight.position.set(0, -10, -20);
+                this.scene.add(rimLight);
+
+                // Additional accent lights
+                const accentLight1 = new THREE.PointLight(0xc9a032, 2, 50);
+                accentLight1.position.set(20, 0, 0);
+                this.scene.add(accentLight1);
+
+                const accentLight2 = new THREE.PointLight(0x3366ff, 2, 50);
+                accentLight2.position.set(-20, 0, 0);
+                this.scene.add(accentLight2);
+            }
+
+            async loadTextures() {
+                const textureLoader = new THREE.TextureLoader();
+                
+                return new Promise((resolve) => {
+                    textureLoader.load(
+                        '/blockblock_logo.png',
+                        (texture) => {
+                            texture.colorSpace = THREE.SRGBColorSpace;
+                            texture.minFilter = THREE.LinearMipmapLinearFilter;
+                            texture.magFilter = THREE.LinearFilter;
+                            texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+                            this.logoTexture = texture;
+                            resolve();
+                        },
+                        undefined,
+                        () => {
+                            // Fallback: create a procedural texture
+                            this.logoTexture = this.createProceduralLogo();
+                            resolve();
+                        }
+                    );
+                });
+            }
+
+            createProceduralLogo() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                
+                // Background
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, 512, 512);
+                
+                // Text
+                ctx.fillStyle = '#4466ff';
+                ctx.font = 'bold 80px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('BLOCK', 256, 200);
+                ctx.fillText('BLOCK', 256, 300);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.colorSpace = THREE.SRGBColorSpace;
+                return texture;
+            }
+
+            createBeveledCoinGeometry(radius, thickness) {
+                const shape = new THREE.Shape();
+                const segments = 64;
+                
+                for (let i = 0; i <= segments; i++) {
+                    const angle = (i / segments) * Math.PI * 2;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if (i === 0) shape.moveTo(x, y);
+                    else shape.lineTo(x, y);
+                }
+                
+                const extrudeSettings = {
+                    depth: thickness,
+                    bevelEnabled: true,
+                    bevelThickness: thickness * 0.15,
+                    bevelSize: thickness * 0.15,
+                    bevelOffset: 0,
+                    bevelSegments: 8,
+                    curveSegments: 64
+                };
+                
+                return new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            }
+
+            createCoinMaterial(isEmissive = false) {
+                return new THREE.MeshPhysicalMaterial({
+                    color: 0x1a1a1e,  // Deep dark titanium
+                    metalness: 0.95,
+                    roughness: 0.15,
+                    clearcoat: 1.0,
+                    clearcoatRoughness: 0.1,
+                    reflectivity: 1.0,
+                    envMap: this.envMap,
+                    envMapIntensity: 1.5,
+                    emissive: isEmissive ? 0x4466ff : 0x000000,
+                    emissiveIntensity: isEmissive ? 0.3 : 0,
+                });
+            }
+
+            createLogoMaterial() {
+                return new THREE.MeshPhysicalMaterial({
+                    map: this.logoTexture,
+                    metalness: 0.7,
+                    roughness: 0.3,
+                    clearcoat: 0.5,
+                    clearcoatRoughness: 0.2,
+                    envMap: this.envMap,
+                    envMapIntensity: 0.8,
+                    emissive: 0x4466ff,
+                    emissiveIntensity: 0.4,
+                    emissiveMap: this.logoTexture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+            }
+
+            createCoins() {
+                for (let i = 0; i < CONFIG.coinCount; i++) {
+                    const coin = this.createSingleCoin(i);
+                    this.coins.push(coin);
+                    this.scene.add(coin.group);
+                }
+            }
+
+            createSingleCoin(index) {
+                const group = new THREE.Group();
+                
+                // Main coin body
+                const radius = 2.5 + Math.random() * 1;
+                const thickness = 0.4;
+                const geometry = this.createBeveledCoinGeometry(radius, thickness);
+                geometry.center();
+                
+                const coinMaterial = this.createCoinMaterial();
+                const coinMesh = new THREE.Mesh(geometry, coinMaterial);
+                coinMesh.rotation.x = Math.PI / 2;
+                group.add(coinMesh);
+                
+                // Front face with logo
+                const faceGeometry = new THREE.CircleGeometry(radius * 0.85, 64);
+                const faceMaterial = this.createLogoMaterial();
+                
+                const frontFace = new THREE.Mesh(faceGeometry, faceMaterial);
+                frontFace.position.z = thickness / 2 + 0.01;
+                frontFace.rotation.x = Math.PI / 2;
+                group.add(frontFace);
+                
+                const backFace = new THREE.Mesh(faceGeometry, faceMaterial.clone());
+                backFace.position.z = -thickness / 2 - 0.01;
+                backFace.rotation.x = -Math.PI / 2;
+                backFace.rotation.z = Math.PI;
+                group.add(backFace);
+                
+                // Edge glow
+                const edgeGeometry = new THREE.TorusGeometry(radius, thickness * 0.3, 8, 64);
+                const edgeMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x3366ff,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                const edgeGlow = new THREE.Mesh(edgeGeometry, edgeMaterial);
+                edgeGlow.rotation.x = Math.PI / 2;
+                group.add(edgeGlow);
+                
+                // Initial position
+                const angle = (index / CONFIG.coinCount) * Math.PI * 2;
+                const distance = 8 + Math.random() * 6;
+                group.position.set(
+                    Math.cos(angle) * distance,
+                    (Math.random() - 0.5) * 10,
+                    Math.sin(angle) * distance - 5
+                );
+                
+                // Trail
+                const trailPositions = [];
+                for (let j = 0; j < CONFIG.trailLength; j++) {
+                    trailPositions.push(group.position.clone());
+                }
+                
+                const trailGeometry = new THREE.BufferGeometry();
+                const trailMaterial = new THREE.LineBasicMaterial({
+                    color: 0x3366ff,
+                    transparent: true,
+                    opacity: 0.3,
+                    linewidth: 2
+                });
+                const trailLine = new THREE.Line(trailGeometry, trailMaterial);
+                this.scene.add(trailLine);
+                
+                return {
+                    group,
+                    mesh: coinMesh,
+                    radius,
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.02,
+                        (Math.random() - 0.5) * 0.02
+                    ),
+                    rotationSpeed: new THREE.Vector3(
+                        (Math.random() - 0.5) * CONFIG.rotationSpeed,
+                        (Math.random() - 0.5) * CONFIG.rotationSpeed * 2,
+                        (Math.random() - 0.5) * CONFIG.rotationSpeed
+                    ),
+                    floatOffset: Math.random() * Math.PI * 2,
+                    trailPositions,
+                    trailLine,
+                    trailGeometry
+                };
+            }
+
+            createParticles() {
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(CONFIG.particleCount * 3);
+                const velocities = new Float32Array(CONFIG.particleCount * 3);
+                const sizes = new Float32Array(CONFIG.particleCount);
+                const colors = new Float32Array(CONFIG.particleCount * 3);
+                
+                for (let i = 0; i < CONFIG.particleCount; i++) {
+                    const i3 = i * 3;
+                    
+                    // Position
+                    positions[i3] = (Math.random() - 0.5) * 80;
+                    positions[i3 + 1] = (Math.random() - 0.5) * 50;
+                    positions[i3 + 2] = (Math.random() - 0.5) * 60 - 10;
+                    
+                    // Velocity (fluid flow)
+                    velocities[i3] = (Math.random() - 0.5) * 0.01;
+                    velocities[i3 + 1] = (Math.random() - 0.5) * 0.01;
+                    velocities[i3 + 2] = (Math.random() - 0.5) * 0.01;
+                    
+                    // Size
+                    sizes[i] = Math.random() * 2 + 0.5;
+                    
+                    // Color (mix of gold and blue)
+                    const colorChoice = Math.random();
+                    if (colorChoice < 0.3) {
+                        // Champagne gold
+                        colors[i3] = 0.8 + Math.random() * 0.2;
+                        colors[i3 + 1] = 0.7 + Math.random() * 0.2;
+                        colors[i3 + 2] = 0.4;
+                    } else if (colorChoice < 0.6) {
+                        // Cyber blue
+                        colors[i3] = 0.2;
+                        colors[i3 + 1] = 0.4 + Math.random() * 0.3;
+                        colors[i3 + 2] = 0.9 + Math.random() * 0.1;
+                    } else {
+                        // White dust
+                        colors[i3] = 0.7;
+                        colors[i3 + 1] = 0.7;
+                        colors[i3 + 2] = 0.8;
+                    }
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                
+                this.particleVelocities = velocities;
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        pixelRatio: { value: this.renderer.getPixelRatio() }
+                    },
+                    vertexShader: `
+                        attribute float size;
+                        attribute vec3 color;
+                        varying vec3 vColor;
+                        varying float vAlpha;
+                        uniform float time;
+                        uniform float pixelRatio;
+                        
+                        void main() {
+                            vColor = color;
+                            
+                            vec3 pos = position;
+                            
+                            // Fluid flow animation
+                            float flow = sin(pos.x * 0.1 + time * 0.5) * cos(pos.y * 0.1 + time * 0.3);
+                            pos.x += flow * 0.5;
+                            pos.y += cos(pos.z * 0.1 + time * 0.4) * 0.5;
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                            
+                            float depth = -mvPosition.z;
+                            vAlpha = smoothstep(80.0, 20.0, depth) * 0.6;
+                            
+                            gl_PointSize = size * pixelRatio * (80.0 / depth);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vAlpha;
+                        
+                        void main() {
+                            float dist = length(gl_PointCoord - vec2(0.5));
+                            if (dist > 0.5) discard;
+                            
+                            float alpha = smoothstep(0.5, 0.0, dist) * vAlpha;
+                            gl_FragColor = vec4(vColor, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                this.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.particles);
+            }
+
+            setupPostProcessing() {
+                this.composer = new EffectComposer(this.renderer);
+                
+                // Render pass
+                const renderPass = new RenderPass(this.scene, this.camera);
+                this.composer.addPass(renderPass);
+                
+                // Bloom pass
+                const bloomPass = new UnrealBloomPass(
+                    new THREE.Vector2(window.innerWidth, window.innerHeight),
+                    1.5,  // strength
+                    0.4,  // radius
+                    0.0   // threshold
+                );
+                this.composer.addPass(bloomPass);
+                
+                // Glitch pass
+                this.glitchPass = new ShaderPass(GlitchShader);
+                this.composer.addPass(this.glitchPass);
+                
+                // Chromatic aberration pass
+                const chromaticPass = new ShaderPass(ChromaticAberrationShader);
+                chromaticPass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+                this.composer.addPass(chromaticPass);
+            }
+
+            setupEventListeners() {
+                window.addEventListener('resize', () => this.onResize());
+                window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+            }
+
+            onResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.composer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            onMouseMove(event) {
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            }
+
+            scheduleGlitch() {
+                const triggerGlitch = () => {
+                    this.glitchActive = true;
+                    this.glitchPass.uniforms.glitchIntensity.value = 1.0;
+                    this.glitchOverlay.classList.add('active');
+                    
+                    setTimeout(() => {
+                        this.glitchActive = false;
+                        this.glitchPass.uniforms.glitchIntensity.value = 0.0;
+                        this.glitchOverlay.classList.remove('active');
+                    }, 100);
+                    
+                    // Schedule next glitch
+                    setTimeout(triggerGlitch, CONFIG.glitchInterval + Math.random() * 5000);
+                };
+                
+                setTimeout(triggerGlitch, CONFIG.glitchInterval);
+            }
+
+            updateCoins(time, delta) {
+                for (let i = 0; i < this.coins.length; i++) {
+                    const coin = this.coins[i];
+                    
+                    // Rotation
+                    coin.group.rotation.x += coin.rotationSpeed.x;
+                    coin.group.rotation.y += coin.rotationSpeed.y;
+                    coin.group.rotation.z += coin.rotationSpeed.z;
+                    
+                    // Floating motion
+                    coin.group.position.y += Math.sin(time + coin.floatOffset) * CONFIG.floatSpeed;
+                    
+                    // Apply velocity
+                    coin.group.position.add(coin.velocity);
+                    
+                    // Magnetic repulsion between coins
+                    for (let j = i + 1; j < this.coins.length; j++) {
+                        const other = this.coins[j];
+                        const diff = coin.group.position.clone().sub(other.group.position);
+                        const dist = diff.length();
+                        const minDist = coin.radius + other.radius + 3;
+                        
+                        if (dist < minDist) {
+                            const force = diff.normalize().multiplyScalar(
+                                CONFIG.magneticForce * (1 - dist / minDist)
+                            );
+                            coin.velocity.add(force.clone().multiplyScalar(delta));
+                            other.velocity.sub(force.clone().multiplyScalar(delta));
+                        }
+                    }
+                    
+                    // Boundary constraints
+                    const bounds = 15;
+                    ['x', 'y', 'z'].forEach(axis => {
+                        if (Math.abs(coin.group.position[axis]) > bounds) {
+                            coin.velocity[axis] *= -0.5;
+                            coin.group.position[axis] = Math.sign(coin.group.position[axis]) * bounds;
+                        }
+                    });
+                    
+                    // Damping
+                    coin.velocity.multiplyScalar(0.99);
+                    
+                    // Update trail
+                    coin.trailPositions.unshift(coin.group.position.clone());
+                    if (coin.trailPositions.length > CONFIG.trailLength) {
+                        coin.trailPositions.pop();
+                    }
+                    
+                    // Update trail geometry
+                    const trailVerts = new Float32Array(coin.trailPositions.length * 3);
+                    coin.trailPositions.forEach((pos, idx) => {
+                        trailVerts[idx * 3] = pos.x;
+                        trailVerts[idx * 3 + 1] = pos.y;
+                        trailVerts[idx * 3 + 2] = pos.z;
+                    });
+                    coin.trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailVerts, 3));
+                    coin.trailLine.material.opacity = 0.15 + Math.sin(time * 2) * 0.1;
+                }
+            }
+
+            updateParticles(time) {
+                if (!this.particles) return;
+                
+                this.particles.material.uniforms.time.value = time;
+                
+                const positions = this.particles.geometry.attributes.position.array;
+                
+                for (let i = 0; i < CONFIG.particleCount; i++) {
+                    const i3 = i * 3;
+                    
+                    // Subtle drift
+                    positions[i3] += this.particleVelocities[i3];
+                    positions[i3 + 1] += this.particleVelocities[i3 + 1];
+                    positions[i3 + 2] += this.particleVelocities[i3 + 2];
+                    
+                    // Wrap around
+                    if (positions[i3] > 40) positions[i3] = -40;
+                    if (positions[i3] < -40) positions[i3] = 40;
+                    if (positions[i3 + 1] > 25) positions[i3 + 1] = -25;
+                    if (positions[i3 + 1] < -25) positions[i3 + 1] = 25;
+                }
+                
+                this.particles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            updateCamera() {
+                // Subtle camera movement based on mouse
+                this.camera.position.x += (this.mouse.x * 3 - this.camera.position.x) * 0.02;
+                this.camera.position.y += (this.mouse.y * 2 - this.camera.position.y) * 0.02;
+                this.camera.lookAt(0, 0, -5);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                const delta = this.clock.getDelta();
+                const time = this.clock.getElapsedTime();
+                
+                this.updateCoins(time, delta);
+                this.updateParticles(time);
+                this.updateCamera();
+                
+                // Update glitch shader time
+                this.glitchPass.uniforms.time.value = time;
+                
+                this.composer.render();
+            }
+        }
+
+        // Initialize
+        new CoinVisualization();
+    </script>
+</body>
+</html>
