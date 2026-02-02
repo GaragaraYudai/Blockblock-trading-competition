@@ -96,10 +96,35 @@ export default function AuthPage() {
     };
 
     return (
-        <main className="min-h-screen text-gray-200 font-sans flex items-center justify-center relative overflow-hidden">
+        <main className="min-h-screen text-gray-200 font-sans flex flex-col items-center justify-center relative overflow-hidden">
             {/* 3D Sakura Hamster World Background */}
             <SceneProvider />
 
+            {/* MOBILE ONLY: 2 Hamsters at Top (Elderly & Jab) */}
+            <div className="relative w-full h-[25vh] z-20 flex justify-center items-end gap-4 lg:hidden pointer-events-none">
+                {/* Elderly Hamster - Left */}
+                <div className="w-[45%] h-full overflow-visible">
+                    <HamsterCanvas>
+                        <Hamster
+                            fileName="Meshy_AI_Animation_Elderly_Shaky_Walk_inplace_withSkin.glb"
+                            scale={1.2}
+                            position={[-1, -1.5, 0]}
+                        />
+                    </HamsterCanvas>
+                </div>
+                {/* Jab Hamster - Right */}
+                <div className="w-[45%] h-full overflow-visible">
+                    <HamsterCanvas>
+                        <Hamster
+                            fileName="Meshy_AI_Animation_Right_Jab_from_Guard_withSkin.glb"
+                            scale={1.2}
+                            position={[1, -1.5, 0]}
+                        />
+                    </HamsterCanvas>
+                </div>
+            </div>
+
+            {/* DESKTOP ONLY: 5 Hamsters on sides (unchanged) */}
             {/* 3D Hamster - Top Left (Walking) */}
             <div className="fixed left-0 top-0 w-[410px] h-[50vh] z-20 hidden lg:block overflow-visible">
                 <HamsterCanvas>
@@ -157,7 +182,7 @@ export default function AuthPage() {
                                 priority
                             />
                         </div>
-                        {/* Jumping Hamster next to Logo */}
+                        {/* Jumping Hamster next to Logo - Desktop Only */}
                         <div className="w-[200px] h-[200px] overflow-visible hidden lg:block">
                             <HamsterCanvas>
                                 <Hamster
