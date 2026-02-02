@@ -144,28 +144,29 @@ export default function AuthPage() {
                 </HamsterCanvas>
             </div>
 
-            {/* 3D Hamster - Center Bottom (Jumping) */}
-            <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-[410px] h-[50vh] z-20 hidden xl:block overflow-visible">
-                <HamsterCanvas>
-                    <Hamster
-                        fileName="Meshy_AI_Animation_jumping_jacks_withSkin.glb"
-                        scale={1.25}
-                        position={[0, -2, 0]}
-                    />
-                </HamsterCanvas>
-            </div>
-
             <div className="relative z-10 w-full max-w-md px-4">
-                {/* Logo */}
+                {/* Logo with Hamster */}
                 <div className="flex flex-col items-center mb-8">
-                    <div className="relative w-20 h-20 mb-4">
-                        <Image
-                            src="/logo.png"
-                            alt="Blockblock Logo"
-                            fill
-                            className="object-contain drop-shadow-2xl"
-                            priority
-                        />
+                    <div className="flex items-center gap-2">
+                        <div className="relative w-20 h-20">
+                            <Image
+                                src="/logo.png"
+                                alt="Blockblock Logo"
+                                fill
+                                className="object-contain drop-shadow-2xl"
+                                priority
+                            />
+                        </div>
+                        {/* Jumping Hamster next to Logo */}
+                        <div className="w-[200px] h-[200px] overflow-visible hidden lg:block">
+                            <HamsterCanvas>
+                                <Hamster
+                                    fileName="Meshy_AI_Animation_jumping_jacks_withSkin.glb"
+                                    scale={1.5}
+                                    position={[0, -2, 0]}
+                                />
+                            </HamsterCanvas>
+                        </div>
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tighter">
                         Blockblock
