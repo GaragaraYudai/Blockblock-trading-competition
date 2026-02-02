@@ -9,6 +9,11 @@ import Image from "next/image";
 import { isAuthenticated, isAdmin, getCurrentUser, logout, fetchWithAuth } from "@/lib/auth";
 
 import { LeaderboardItem } from "@/types";
+import dynamic from "next/dynamic";
+
+// Dynamic import for 3D components (client-side only)
+const HamsterCanvas = dynamic(() => import("@/components/HamsterCanvas"), { ssr: false });
+const Hamster = dynamic(() => import("@/components/Hamster"), { ssr: false });
 
 const DEFAULT_AVATARS = [
   "wonyoung1.jpg", "wonyoung2.jpg", "wonyoung3.jpg", "wonyoung4.jpg", "wonyoung5.jpg"
@@ -182,6 +187,29 @@ export default function Dashboard() {
             <LeaderboardTable data={data} />
           )}
         </section>
+      </div>
+
+      {/* 3D Hamsters - Fixed positioned at corners */}
+      {/* Bottom Left - Walking */}
+      <div className="fixed left-0 bottom-0 w-[300px] h-screen z-30 hidden lg:block pointer-events-none overflow-visible">
+        <HamsterCanvas>
+          <Hamster
+            fileName="Meshy_AI_Animation_Walking_withSkin.glb"
+            scale={1.4}
+            position={[0, -2, 0]}
+          />
+        </HamsterCanvas>
+      </div>
+
+      {/* Bottom Right - Jumping */}
+      <div className="fixed right-0 bottom-0 w-[300px] h-screen z-30 hidden lg:block pointer-events-none overflow-visible">
+        <HamsterCanvas>
+          <Hamster
+            fileName="Meshy_AI_Animation_jumping_jacks_withSkin.glb"
+            scale={1.4}
+            position={[0, -2, 0]}
+          />
+        </HamsterCanvas>
       </div>
     </main>
   );

@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { login, register } from "@/lib/auth";
 import { UserPlus, LogIn, Upload, Loader2 } from "lucide-react";
 import Image from "next/image";
+import SceneProvider from "@/components/SceneProvider";
+import dynamic from "next/dynamic";
+
+// Dynamic import for 3D components (client-side only)
+const HamsterCanvas = dynamic(() => import("@/components/HamsterCanvas"), { ssr: false });
+const Hamster = dynamic(() => import("@/components/Hamster"), { ssr: false });
 
 export default function AuthPage() {
     const router = useRouter();
@@ -90,11 +96,63 @@ export default function AuthPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#0E1015] text-gray-200 font-sans flex items-center justify-center relative overflow-hidden">
-            {/* Background effects */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/10 rounded-full blur-[150px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[150px]" />
+        <main className="min-h-screen text-gray-200 font-sans flex items-center justify-center relative overflow-hidden">
+            {/* 3D Sakura Hamster World Background */}
+            <SceneProvider />
+
+            {/* 3D Hamster - Top Left (Walking) */}
+            <div className="fixed left-0 top-0 w-[410px] h-[50vh] z-20 hidden lg:block overflow-visible">
+                <HamsterCanvas>
+                    <Hamster
+                        fileName="Meshy_AI_Animation_Walking_withSkin.glb"
+                        scale={1.5}
+                        position={[0, -2, 0]}
+                    />
+                </HamsterCanvas>
+            </div>
+
+            {/* 3D Hamster - Bottom Left (Running) */}
+            <div className="fixed left-0 bottom-0 w-[410px] h-[50vh] z-20 hidden lg:block overflow-visible">
+                <HamsterCanvas>
+                    <Hamster
+                        fileName="Meshy_AI_Animation_Running_withSkin.glb"
+                        scale={1.5}
+                        position={[0, -2, 0]}
+                    />
+                </HamsterCanvas>
+            </div>
+
+            {/* 3D Hamster - Top Right (Elderly) */}
+            <div className="fixed right-0 top-0 w-[410px] h-[50vh] z-20 hidden lg:block overflow-visible">
+                <HamsterCanvas>
+                    <Hamster
+                        fileName="Meshy_AI_Animation_Elderly_Shaky_Walk_inplace_withSkin.glb"
+                        scale={1.5}
+                        position={[0, -2, 0]}
+                    />
+                </HamsterCanvas>
+            </div>
+
+            {/* 3D Hamster - Bottom Right (Jab) */}
+            <div className="fixed right-0 bottom-0 w-[410px] h-[50vh] z-20 hidden lg:block overflow-visible">
+                <HamsterCanvas>
+                    <Hamster
+                        fileName="Meshy_AI_Animation_Right_Jab_from_Guard_withSkin.glb"
+                        scale={1.5}
+                        position={[0, -2, 0]}
+                    />
+                </HamsterCanvas>
+            </div>
+
+            {/* 3D Hamster - Center Bottom (Jumping) */}
+            <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-[410px] h-[50vh] z-20 hidden xl:block overflow-visible">
+                <HamsterCanvas>
+                    <Hamster
+                        fileName="Meshy_AI_Animation_jumping_jacks_withSkin.glb"
+                        scale={1.25}
+                        position={[0, -2, 0]}
+                    />
+                </HamsterCanvas>
             </div>
 
             <div className="relative z-10 w-full max-w-md px-4">
@@ -128,8 +186,8 @@ export default function AuthPage() {
                                 setSuccess("");
                             }}
                             className={`flex-1 py-4 px-6 font-semibold transition-all ${activeTab === "login"
-                                    ? "bg-blue-600/20 text-blue-400 border-b-2 border-blue-500"
-                                    : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                                ? "bg-blue-600/20 text-blue-400 border-b-2 border-blue-500"
+                                : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
                                 }`}
                         >
                             <LogIn className="inline-block mr-2" size={18} />
@@ -142,8 +200,8 @@ export default function AuthPage() {
                                 setSuccess("");
                             }}
                             className={`flex-1 py-4 px-6 font-semibold transition-all ${activeTab === "signup"
-                                    ? "bg-purple-600/20 text-purple-400 border-b-2 border-purple-500"
-                                    : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                                ? "bg-purple-600/20 text-purple-400 border-b-2 border-purple-500"
+                                : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
                                 }`}
                         >
                             <UserPlus className="inline-block mr-2" size={18} />
