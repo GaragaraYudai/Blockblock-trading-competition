@@ -107,7 +107,7 @@ export default function AuthPage() {
                     <HamsterCanvas>
                         <Hamster
                             fileName="Meshy_AI_Animation_Elderly_Shaky_Walk_inplace_withSkin.glb"
-                            scale={1.2}
+                            scale={1.08}
                             position={[-1, -1.5, 0]}
                         />
                     </HamsterCanvas>
@@ -117,7 +117,7 @@ export default function AuthPage() {
                     <HamsterCanvas>
                         <Hamster
                             fileName="Meshy_AI_Animation_Right_Jab_from_Guard_withSkin.glb"
-                            scale={1.2}
+                            scale={1.08}
                             position={[1, -1.5, 0]}
                         />
                     </HamsterCanvas>
@@ -130,7 +130,7 @@ export default function AuthPage() {
                 <HamsterCanvas>
                     <Hamster
                         fileName="Meshy_AI_Animation_Walking_withSkin.glb"
-                        scale={1.5}
+                        scale={1.35}
                         position={[0, -2, 0]}
                     />
                 </HamsterCanvas>
@@ -141,7 +141,7 @@ export default function AuthPage() {
                 <HamsterCanvas>
                     <Hamster
                         fileName="Meshy_AI_Animation_Running_withSkin.glb"
-                        scale={1.5}
+                        scale={1.35}
                         position={[0, -2, 0]}
                     />
                 </HamsterCanvas>
@@ -152,7 +152,7 @@ export default function AuthPage() {
                 <HamsterCanvas>
                     <Hamster
                         fileName="Meshy_AI_Animation_Elderly_Shaky_Walk_inplace_withSkin.glb"
-                        scale={1.5}
+                        scale={1.35}
                         position={[0, -2, 0]}
                     />
                 </HamsterCanvas>
@@ -163,7 +163,7 @@ export default function AuthPage() {
                 <HamsterCanvas>
                     <Hamster
                         fileName="Meshy_AI_Animation_Right_Jab_from_Guard_withSkin.glb"
-                        scale={1.5}
+                        scale={1.35}
                         position={[0, -2, 0]}
                     />
                 </HamsterCanvas>
@@ -187,7 +187,7 @@ export default function AuthPage() {
                             <HamsterCanvas>
                                 <Hamster
                                     fileName="Meshy_AI_Animation_jumping_jacks_withSkin.glb"
-                                    scale={1.5}
+                                    scale={1.35}
                                     position={[0, -2, 0]}
                                 />
                             </HamsterCanvas>

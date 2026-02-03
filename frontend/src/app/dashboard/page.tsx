@@ -195,7 +195,7 @@ export default function Dashboard() {
         <HamsterCanvas>
           <Hamster
             fileName="Meshy_AI_Animation_Walking_withSkin.glb"
-            scale={1.4}
+            scale={1.26}
             position={[0, -2, 0]}
           />
         </HamsterCanvas>
@@ -206,7 +206,7 @@ export default function Dashboard() {
         <HamsterCanvas>
           <Hamster
             fileName="Meshy_AI_Animation_jumping_jacks_withSkin.glb"
-            scale={1.4}
+            scale={1.26}
             position={[0, -2, 0]}
           />
         </HamsterCanvas>
